@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jimposter</title>
+<style>
+:root{--bg:#14151f;--card:#1f2133;--ink:#f1f1f8;--mut:#9a9cb5;--acc:#7c5cff;--bad:#ff4d6d;--ok:#2ec4a0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,sans-serif;display:flex;justify-content:center;padding:16px}
+main{width:100%;max-width:520px}
+h1{text-align:center;margin:8px 0 16px;letter-spacing:1px}
+.card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px}
+h2{font-size:15px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+label{display:flex;align-items:center;gap:8px;margin:8px 0}
+input[type=number],select{background:#2a2d45;color:var(--ink);border:1px solid #3a3e5e;border-radius:8px;padding:8px;font-size:16px;width:80px}
+select{width:auto}
+button{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:14px 18px;font-size:18px;font-weight:600;cursor:pointer;width:100%}
+button.alt{background:#2a2d45}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border-radius:20px;background:#2a2d45;cursor:pointer;user-select:none;border:2px solid transparent}
+.chip.on{border-color:var(--acc);background:#3a3470}
+.hide{display:none}
+.center{text-align:center}
+.big{font-size:34px;font-weight:800;margin:10px 0}
+.timer{font-size:64px;font-weight:800;font-variant-numeric:tabular-nums}
+.bad{color:var(--bad)}.ok{color:var(--ok)}
+.err{color:var(--bad);text-align:center;min-height:20px}
+.row{display:flex;gap:10px}
+</style>
+</head>
+<body>
+<main>
+<h1>🕵️ JIMPOSTER</h1>
+
+<section id="setup">
+  <div class="card">
+    <h2>Players</h2>
+    <label>Number of players <input type="number" id="players" min="3" max="30" value="6"></label>
+  </div>
+  <div class="card">
+    <h2>Jimposters</h2>
+    <label><input type="radio" name="imode" value="fixed" checked> Exactly <input type="number" id="ifixed" min="1" max="30" value="1"></label>
+    <label><input type="radio" name="imode" value="range"> Random between <input type="number" id="imin" min="1" max="30" value="2"> and <input type="number" id="imax" min="1" max="30" value="4"></label>
+    <label><input type="checkbox" id="allimp"> Allow a round where everyone is an jimposter</label>
+  </div>
+  <div class="card">
+    <h2>Categories</h2>
+    <div class="chips" id="cats"></div>
+  </div>
+  <div class="card">
+    <h2>Game length</h2>
+    <label>Discussion time <select id="mins">
+      <option value="0">No timer</option><option value="1">1 min</option><option value="2">2 min</option>
+      <option value="3">3 min</option><option value="5" selected>5 min</option><option value="8">8 min</option>
+      <option value="10">10 min</option><option value="15">15 min</option>
+    </select></label>
+  </div>
+  <div class="card">
+    <h2>Jimposter hint</h2>
+    <label>Hint for jimposters <select id="hint">
+      <option value="none">None</option><option value="clue">Short clue</option><option value="letter">First letter + length</option>
+    </select></label>
+    <div style="color:var(--mut);font-size:14px">Everyone always sees the category.</div>
+  </div>
+  <div class="err" id="err"></div>
+  <button id="start">Start game</button>
+</section>
+
+<section id="pass" class="hide">
+  <div class="card center">
+    <div style="color:var(--mut)" id="pcat"></div>
+    <div class="big" id="pname"></div>
+    <div id="pcontent"></div>
+  </div>
+  <button id="reveal">Tap to see your role</button>
+  <button id="next" class="hide alt">Hide and pass on</button>
+</section>
+
+<section id="play" class="hide">
+  <div class="card center">
+    <div style="color:var(--mut)">Category</div>
+    <div class="big" id="pcat2"></div>
+    <div class="timer" id="clock"></div>
+    <div style="color:var(--mut)" id="info"></div>
+  </div>
+  <div class="card center hide" id="result"></div>
+  <div class="row">
+    <button id="show" class="alt">Reveal jimposters</button>
+    <button id="again">New round</button>
+  </div>
+</section>
+</main>
+
+<script>
+const DATA={
+Food:[["Pizza","Round and sliced"],["Sushi","Raw fish and rice"],["Tacos","Folded in a shell"],["Pancakes","A breakfast stack"],["Ice Cream","Cold and scooped"],["Burger","Between buns"],["Spaghetti","Long noodles"],["Popcorn","A movie snack"],["Donut","Has a hole"],["Salad","Mostly leaves"],["Burrito","Wrapped up tight"],["Waffles","Grid pattern"]],
+Sports:[["Soccer","Goals and a round ball"],["Basketball","Hoops"],["Tennis","Rackets and a net"],["Swimming","Done in a pool"],["Baseball","Bat and diamond"],["Golf","Holes and clubs"],["Hockey","Ice and sticks"],["Volleyball","Spiking over a net"],["Gymnastics","Flips and beams"],["Skateboarding","Ramps and tricks"],["Boxing","Gloves"],["Football","Touchdowns"]],
+Places:[["Library","Quiet shelves"],["Airport","Gates and runways"],["Beach","Sand and waves"],["Hospital","Doctors and nurses"],["School","Bells and desks"],["Zoo","Animals in enclosures"],["Museum","Exhibits"],["Supermarket","Aisles and carts"],["Movie Theater","Dark with a big screen"],["Amusement Park","Rides"],["Bank","Vaults"],["Gym","Weights"]],
+Movies:[["Titanic","Big ship, icy ending"],["Frozen","Snow and sisters"],["Jaws","Shark"],["Shrek","Green ogre"],["The Lion King","Pride Rock"],["Toy Story","Toys come alive"],["Finding Nemo","A lost fish"],["Jurassic Park","Dinosaurs"],["Star Wars","A galaxy far away"],["Harry Potter","Wizard school"],["Spider-Man","Web-slinger"],["The Avengers","Team of heroes"]],
+Animals:[["Elephant","Has a trunk"],["Penguin","Waddles on ice"],["Giraffe","Very tall neck"],["Kangaroo","Hops with a pouch"],["Dolphin","Clicks in the sea"],["Octopus","Eight arms"],["Owl","Night hunter"],["Panda","Bamboo eater"],["Crocodile","Snapping jaws"],["Bat","Sleeps upside down"],["Zebra","Stripes"],["Lion","Roars"]],
+Technology:[["Smartphone","Fits in a pocket"],["Laptop","Foldable computer"],["Robot","A machine that moves"],["Drone","Flies without a pilot"],["Headphones","Over your ears"],["Game Console","Plugs into a TV"],["Smartwatch","On your wrist"],["Microwave","Heats food"],["Camera","Takes photos"],["Keyboard","Lots of keys"],["Electric Car","No gas needed"],["Printer","Puts ink on paper"]],
+Celebrities:[["Taylor Swift","Pop singer"],["Cristiano Ronaldo","Soccer star"],["Dwayne Johnson","Wrestler turned actor"],["Zendaya","Actress and singer"],["LeBron James","Basketball star"],["Ariana Grande","Pop singer, high notes"],["Tom Holland","Plays Spider-Man"],["Billie Eilish","Whispery pop singer"],["MrBeast","YouTuber who gives away money"],["Lionel Messi","Soccer legend"],["Selena Gomez","Singer and actress"],["Ryan Reynolds","Funny actor"]]
+};
+const $=id=>document.getElementById(id);
+const show=id=>["setup","pass","play"].forEach(s=>$(s).classList.toggle("hide",s!==id));
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+let g=null,timer=null;
+
+Object.keys(DATA).forEach(c=>{
+  const d=document.createElement("div");d.className="chip on";d.textContent=c;d.dataset.c=c;
+  d.onclick=()=>d.classList.toggle("on");$("cats").appendChild(d);
+});
+
+$("start").onclick=()=>{
+  const cats=[...document.querySelectorAll(".chip.on")].map(c=>c.dataset.c);
+  const n=+$("players").value;
+  if(!(n>=3)){return $("err").textContent="Need at least 3 players."}
+  if(!cats.length){return $("err").textContent="Pick at least one category."}
+  const cap=$("allimp").checked?n:n-1;
+  let k;
+  if(document.querySelector("input[name=imode]:checked").value==="fixed"){
+    k=+$("ifixed").value;
+  }else{
+    let lo=+$("imin").value,hi=+$("imax").value;
+    if(lo>hi)[lo,hi]=[hi,lo];
+    k=rnd(Math.max(1,Math.min(lo,cap)),Math.min(hi,cap));
+  }
+  k=Math.max(1,Math.min(k,cap));
+  $("err").textContent="";
+  const cat=pick(cats),[word,clue]=pick(DATA[cat]);
+  const roles=Array.from({length:n},(_,i)=>i<k);
+  for(let i=n-1;i>0;i--){const j=rnd(0,i);[roles[i],roles[j]]=[roles[j],roles[i]]}
+  g={n,k,cat,word,clue,roles,i:0,mins:+$("mins").value,hint:$("hint").value};
+  showTurn();
+};
+
+function showTurn(){
+  show("pass");
+  $("pcat").textContent="Category: "+g.cat;
+  $("pname").textContent="Player "+(g.i+1);
+  $("pcontent").innerHTML="";
+  $("reveal").classList.remove("hide");$("next").classList.add("hide");
+}
+$("reveal").onclick=()=>{
+  const imp=g.roles[g.i];
+  let h="";
+  if(imp){
+    h='<div class="big bad">JIMPOSTER</div><div>Blend in!</div>';
+    if(g.hint==="clue")h+='<p>Hint: '+g.clue+'</p>';
+    if(g.hint==="letter")h+='<p>Hint: starts with “'+g.word[0]+'”, '+g.word.replace(/ /g,"").length+' letters</p>';
+  }else{
+    h='<div style="color:var(--mut)">The secret word is</div><div class="big ok">'+g.word+'</div>';
+  }
+  $("pcontent").innerHTML=h;
+  $("reveal").classList.add("hide");$("next").classList.remove("hide");
+  $("next").textContent=g.i===g.n-1?"Hide and start discussion":"Hide and pass on";
+};
+$("next").onclick=()=>{
+  if(++g.i<g.n)showTurn();else startPlay();
+};
+
+function fmt(s){return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function startPlay(){
+  show("play");
+  $("pcat2").textContent=g.cat;
+  $("result").classList.add("hide");
+  $("info").textContent=g.n+" players, "+g.k+" jimposter"+(g.k>1?"s":"")+" hidden among them";
+  clearInterval(timer);
+  if(!g.mins){$("clock").textContent="∞";return}
+  let t=g.mins*60;$("clock").textContent=fmt(t);
+  timer=setInterval(()=>{
+    t--;$("clock").textContent=fmt(Math.max(t,0));
+    if(t<=0){clearInterval(timer);$("clock").textContent="Time’s up!";beep()}
+  },1000);
+}
+function beep(){
+  try{const a=new AudioContext(),o=a.createOscillator();o.connect(a.destination);o.frequency.value=660;o.start();o.stop(a.currentTime+.6)}catch(e){}
+  if(navigator.vibrate)navigator.vibrate(400);
+}
+$("show").onclick=()=>{
+  const who=g.roles.map((r,i)=>r?"Player "+(i+1):null).filter(Boolean).join(", ");
+  $("result").innerHTML='<div style="color:var(--mut)">Jimposters</div><div class="big bad">'+who+'</div><div style="color:var(--mut)">The word was</div><div class="big ok">'+g.word+'</div>';
+  $("result").classList.remove("hide");
+  clearInterval(timer);
+};
+$("again").onclick=()=>{clearInterval(timer);show("setup")};
+</script>
+</body>
+</html>
