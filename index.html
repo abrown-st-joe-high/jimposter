@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jimposter</title>
+<title>Jjimposter</title>
 <style>
 :root{--bg:#14151f;--card:#1f2133;--ink:#f1f1f8;--mut:#9a9cb5;--acc:#7c5cff;--bad:#ff4d6d;--ok:#2ec4a0}
 *{box-sizing:border-box}
@@ -39,10 +39,12 @@ button.alt{background:#2a2d45}
     <label>Number of players <input type="number" id="players" min="3" max="30" value="6"></label>
   </div>
   <div class="card">
-    <h2>Jimposters</h2>
+    <h2>Jjimposters</h2>
     <label><input type="radio" name="imode" value="fixed" checked> Exactly <input type="number" id="ifixed" min="1" max="30" value="1"></label>
     <label><input type="radio" name="imode" value="range"> Random between <input type="number" id="imin" min="1" max="30" value="2"> and <input type="number" id="imax" min="1" max="30" value="4"></label>
-    <label><input type="checkbox" id="allimp"> Allow a round where everyone is an jimposter</label>
+    <label><input type="checkbox" id="allimp"> Allow a round where everyone is a jimposter</label>
+    <label><input type="checkbox" id="revealothers"> Reveal other jimposters to each jimposter (player numbers)</label>
+    <label><input type="checkbox" id="showcount"> Show the number of jimposters on each role page</label>
   </div>
   <div class="card">
     <h2>Categories</h2>
@@ -57,7 +59,7 @@ button.alt{background:#2a2d45}
     </select></label>
   </div>
   <div class="card">
-    <h2>Jimposter hint</h2>
+    <h2>Jjimposter hint</h2>
     <label>Hint for jimposters <select id="hint">
       <option value="none">None</option><option value="clue">Short clue</option><option value="letter">First letter + length</option>
     </select></label>
@@ -132,7 +134,7 @@ $("start").onclick=()=>{
   const cat=pick(cats),[word,clue]=pick(DATA[cat]);
   const roles=Array.from({length:n},(_,i)=>i<k);
   for(let i=n-1;i>0;i--){const j=rnd(0,i);[roles[i],roles[j]]=[roles[j],roles[i]]}
-  g={n,k,cat,word,clue,roles,i:0,mins:+$("mins").value,hint:$("hint").value};
+  g={n,k,cat,word,clue,roles,i:0,mins:+$("mins").value,hint:$("hint").value,others:$("revealothers").checked,count:$("showcount").checked};
   showTurn();
 };
 
@@ -148,11 +150,16 @@ $("reveal").onclick=()=>{
   let h="";
   if(imp){
     h='<div class="big bad">JIMPOSTER</div><div>Blend in!</div>';
+    if(g.others){
+      const o=g.roles.map((r,i)=>r&&i!==g.i?"Player "+(i+1):null).filter(Boolean);
+      h+=o.length?'<p>Other jimposters: <b>'+o.join(", ")+'</b></p>':'<p>You are the only jimposter.</p>';
+    }
     if(g.hint==="clue")h+='<p>Hint: '+g.clue+'</p>';
     if(g.hint==="letter")h+='<p>Hint: starts with “'+g.word[0]+'”, '+g.word.replace(/ /g,"").length+' letters</p>';
   }else{
     h='<div style="color:var(--mut)">The secret word is</div><div class="big ok">'+g.word+'</div>';
   }
+  if(g.count)h+='<p style="color:var(--mut)">Jimposters this round: <b>'+g.k+'</b></p>';
   $("pcontent").innerHTML=h;
   $("reveal").classList.add("hide");$("next").classList.remove("hide");
   $("next").textContent=g.i===g.n-1?"Hide and start discussion":"Hide and pass on";
@@ -181,7 +188,7 @@ function beep(){
 }
 $("show").onclick=()=>{
   const who=g.roles.map((r,i)=>r?"Player "+(i+1):null).filter(Boolean).join(", ");
-  $("result").innerHTML='<div style="color:var(--mut)">Jimposters</div><div class="big bad">'+who+'</div><div style="color:var(--mut)">The word was</div><div class="big ok">'+g.word+'</div>';
+  $("result").innerHTML='<div style="color:var(--mut)">Jjimposters</div><div class="big bad">'+who+'</div><div style="color:var(--mut)">The word was</div><div class="big ok">'+g.word+'</div>';
   $("result").classList.remove("hide");
   clearInterval(timer);
 };
